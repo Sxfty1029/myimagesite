@@ -1,3 +1,4 @@
+import os
 import matplotlib
 matplotlib.use('Agg')  # Use the 'Agg' backend, which is non-interactive and thread-safe
 
