@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     imageBox.innerHTML = ''; // Clear previous image
 
     try {
-      const response = await fetch("https://myimagesitebackend.onrender.com/generate-image", {
+      const response = await fetch("https://myimagesitebackend.onrender.com/", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
