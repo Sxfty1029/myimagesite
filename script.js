@@ -1,445 +1,220 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Authorization elements
-  const authContainer = document.getElementById('auth-container');
-  const mainContainer = document.getElementById('main-container');
-  const authButton = document.getElementById('auth-button');
-  const passwordInput = document.getElementById('password-input');
-  const authError = document.getElementById('auth-error');
+const functionSelect = document.getElementById('function-select');
+const parametersBox = document.getElementById('parameters-box');
+const plotButton = document.getElementById('plot-button');
+const userInputField = document.getElementById('user-input');
 
-  // Set your password
-  const correctPassword = 'mathbot1';
+function getDefaultParams(type) {
+  switch (type) {
+    case 'linear': return { a: 1, b: 0 };
+    case 'quadratic': return { a: 1, b: 0, c: 0 };
+    case 'cubic': return { a: 1, b: 0, c: 0, d: 0 };
+    case 'sine':
+    case 'cosine':
+    case 'tangent': return { amplitude: 1, frequency: 1, phase: 0 };
+    case 'exponential': return { a: 1 };
+    case 'logarithmic': return { a: 1 };
+    case 'absolute': return { a: 1 };
+    case 'square-root': return { a: 1 };
+    default: return {};
+  }
+}
 
-  // On clicking the submit button
-  authButton.addEventListener('click', () => {
-    const enteredPassword = passwordInput.value;
+function getEquationTemplate(type) {
+  switch (type) {
+    case 'linear': return 'y = a * x + b';
+    case 'quadratic': return 'y = a * x² + b * x + c';
+    case 'cubic': return 'y = a * x³ + b * x² + c * x + d';
+    case 'sine': return 'y = sin(x)';
+    case 'cosine': return 'y = cos(x)';
+    case 'tangent': return 'y = tan(x)';
+    case 'exponential': return 'y = a * eˣ';
+    case 'logarithmic': return 'y = a * ln(|x|)';
+    case 'absolute': return 'y = a * |x|';
+    case 'square-root': return 'y = a * √|x|';
+    default: return 'y = f(x)';
+  }
+}
 
-    if (enteredPassword === correctPassword) {
-      // If the password is correct, show the main content
-      authContainer.style.display = 'none';
-      mainContainer.style.display = 'block';
-    } else {
-      // If the password is incorrect, show an error message
-      authError.style.display = 'block';
-    }
+
+function updateParameterInputs(type) {
+  parametersBox.innerHTML = '';
+
+  const params = getDefaultParams(type);
+  const equationText = getEquationTemplate(type);
+
+  // Equation display
+  const equationDiv = document.createElement('div');
+  equationDiv.textContent = `Equation: ${equationText}`;
+  equationDiv.style.marginBottom = '15px';
+  equationDiv.style.fontWeight = 'bold';
+  equationDiv.style.fontSize = '16px';
+  parametersBox.appendChild(equationDiv);
+
+  // Parameter inputs
+  for (const key in params) {
+    const label = document.createElement('label');
+    label.textContent = key;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.id = `param-${key}`;
+    input.value = params[key];
+    input.style.width = '100%';
+    input.style.padding = '8px';
+    input.style.marginBottom = '10px';
+    input.style.border = '1px solid #ccc';
+    input.style.borderRadius = '6px';
+    parametersBox.appendChild(label);
+    parametersBox.appendChild(input);
+  }
+}
+
+
+function getParametersFromInputs() {
+  const inputs = parametersBox.querySelectorAll('input');
+  const params = {};
+  inputs.forEach(input => {
+    const key = input.id.replace('param-', '');
+    params[key] = parseFloat(input.value);
   });
+  return params;
+}
 
-  const userInputField = document.getElementById('user-input');
-  const functionSelect = document.getElementById('function-select');
-  const sendButton = document.getElementById('send-button');
-  const imageBox = document.getElementById('image-box');
-  const parametersBox = document.getElementById('parameters-box');
-  const updatePlotButton = document.getElementById('update-plot');
+function generateXYData(type, params) {
+  const x = [];
+  const y = [];
+  const step = 0.1;
+  const range = ['sine', 'cosine', 'tangent'].includes(type) ? 2 * Math.PI : 10;
 
-  async function sendToFlaskServer(functionType, parameters) {
-    const loadingIndicator = document.getElementById('loading-indicator');
-    loadingIndicator.style.display = 'block';
-    imageBox.innerHTML = ''; // Clear previous image
-
-    try {
-      const response = await fetch('http://127.0.0.1:5000/generate-plot', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ functionType, parameters })
-      });
-
-      if (!response.ok) {
-        const errorDetails = await response.json();
-        throw new Error(`HTTP error! status: ${response.status}, details: ${JSON.stringify(errorDetails)}`);
-      }
-
-      const data = await response.json();
-      const imageUrl = data.image_url;
-
-      const img = document.createElement('img');
-      img.src = imageUrl;
-      imageBox.appendChild(img);
-
-    } catch (error) {
-      console.error('Error generating plot:', error);
-      imageBox.textContent = `Plot generation failed: ${error.message}`;
-    } finally {
-      loadingIndicator.style.display = 'none';
-    }
-  }
-
-  function generateBasePlotCode(isTrigonometric, functionDefinition) {
-    return `
-import numpy as np
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(12, 6))
-
-# Create data points
-${isTrigonometric ? 'x = np.linspace(-2*np.pi, 2*np.pi, 1000)' : 'x = np.linspace(-10, 10, 1000)'}
-
-# Define function
-y = ${functionDefinition}
-
-# Create plot
-plt.plot(x, y, 'b-', label='y')
-
-plt.grid(True, which='both', alpha=0.3)
-
-# Add vertical grid lines every pi/6
-pi_over_6 = np.pi / 6
-for i in range(-60, 61):
-  x_val = i * pi_over_6
-  plt.axvline(x=x_val, color='gray', linestyle='--', alpha=0.3)
-
-${isTrigonometric ? `
-plt.xticks(
-  [-2*np.pi, -3*np.pi/2, -np.pi, -3*np.pi/4, -5*np.pi/6, -2*np.pi/3, -np.pi/2, -np.pi/3, -np.pi/4, -np.pi/6, 0, np.pi/6, np.pi/4, np.pi/3, np.pi/2, 2*np.pi/3, 5*np.pi/6, 3*np.pi/4, np.pi, 3*np.pi/2, 2*np.pi],
-  ['-2π', '-3π/2', '-π', '-3π/4', '-5π/6', '-2π/3', '-π/2', '-π/3', '-π/4', '-π/6', '0', 'π/6', 'π/4', 'π/3', 'π/2', '2π/3', '5π/6', '3π/4', 'π', '3π/2', '2π'],
-  fontsize=8, ha='right'
-)
-plt.tick_params(axis='x', labelrotation=60, labelsize=8)
-plt.yticks(np.arange(-3, 4, 1))
-plt.xlim(-2*np.pi, 2*np.pi)
-plt.ylim(-3, 3)
-plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(np.pi/6))
-plt.gca().yaxis.set_minor_locator(plt.MultipleLocator(1))
-` : 'plt.xticks(np.arange(-10, 11, 1))'}
-plt.yticks(np.arange(-3, 4, 1))
-
-plt.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-plt.axvline(x=0, color='k', linestyle='-', alpha=0.3)
-
-${isTrigonometric ? 'plt.xlim(-2*np.pi, 2*np.pi)' : 'plt.xlim(-10, 10)'}
-plt.ylim(-3, 3)
-plt.xlabel('${isTrigonometric ? "x (radians)" : "x"}')
-plt.ylabel('y')
-plt.legend()`;
-  }
-
-  function generatePlotCodeWithParameters(functionType, parameters) {
-    const isTrigonometric = ['sine', 'cosine', 'tangent'].includes(functionType);
-    let functionDefinition = '';
-    let legendFormula = 'y';
-
-    switch (functionType) {
+  for (let i = -range; i <= range; i += step) {
+    let xi = i;
+    let yi = null;
+    switch (type) {
       case 'linear':
-        functionDefinition = `${parameters.a} * x + ${parameters.b}`;
-        break;
+        yi = params.a * xi + params.b; break;
       case 'quadratic':
-        functionDefinition = `${parameters.a} * x**2 + ${parameters.b} * x + ${parameters.c}`;
-        break;
+        yi = params.a * xi ** 2 + params.b * xi + params.c; break;
       case 'cubic':
-        functionDefinition = `${parameters.a} * x**3 + ${parameters.b} * x**2 + ${parameters.c} * x + ${parameters.d}`;
-        break;
+        yi = params.a * xi ** 3 + params.b * xi ** 2 + params.c * xi + params.d; break;
       case 'sine':
-        functionDefinition = `${parameters.amplitude} * np.sin(${parameters.frequency} * x + ${parameters.phase})`;
-        legendFormula = 'y = sin(x)';
-        break;
+        yi = params.amplitude * Math.sin(params.frequency * xi + params.phase); break;
       case 'cosine':
-        functionDefinition = `${parameters.amplitude} * np.cos(${parameters.frequency} * x + ${parameters.phase})`;
-        legendFormula = 'y = cos(x)';
-        break;
+        yi = params.amplitude * Math.cos(params.frequency * xi + params.phase); break;
       case 'tangent':
-        functionDefinition = `${parameters.amplitude} * np.tan(${parameters.frequency} * x + ${parameters.phase})`;
-        legendFormula = 'y = tan(x)';
-        break;
+        yi = params.amplitude * Math.tan(params.frequency * xi + params.phase); break;
       case 'exponential':
-        functionDefinition = `${parameters.a} * np.exp(x)`;
-        break;
+        yi = params.a * Math.exp(xi); break;
       case 'logarithmic':
-        functionDefinition = `${parameters.a} * np.log(np.abs(x))`;
-        break;
+        yi = xi !== 0 ? params.a * Math.log(Math.abs(xi)) : null; break;
       case 'absolute':
-        functionDefinition = `${parameters.a} * np.abs(x)`;
-        break;
+        yi = params.a * Math.abs(xi); break;
       case 'square-root':
-        functionDefinition = `${parameters.a} * np.sqrt(np.abs(x))`;
-        break;
+        yi = params.a * Math.sqrt(Math.abs(xi)); break;
     }
-
-    // Generate Python code for plotting
-    return `
-import numpy as np
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(16, 8))
-
-# Create data points
-x = ${isTrigonometric ? 'np.linspace(-2*np.pi, 2*np.pi, 1000)' : 'np.linspace(-10, 10, 1000)'}
-
-# Define function
-y = ${functionDefinition}
-
-# Create plot
-plt.plot(x, y, 'b-', label='${legendFormula}')
-
-plt.grid(True, which='both', alpha=0.3)
-
-${isTrigonometric ? `
-plt.xticks(
-  [-2*np.pi, -3*np.pi/2, -np.pi, -3*np.pi/4, -5*np.pi/6, -2*np.pi/3, -np.pi/2, -np.pi/3, -np.pi/4, -np.pi/6, 0, np.pi/6, np.pi/4, np.pi/3, np.pi/2, 2*np.pi/3, 5*np.pi/6, 3*np.pi/4, np.pi, 3*np.pi/2, 2*np.pi],
-  ['-2π', '-3π/2', '-π', '-3π/4', '-5π/6', '-2π/3', '-π/2', '-π/3', '-π/4', '-π/6', '0', 'π/6', 'π/4', 'π/3', 'π/2', '2π/3', '5π/6', '3π/4', 'π', '3π/2', '2π'],
-  rotation=60, ha='right', fontsize=8
-)
-plt.tick_params(axis='x', labelrotation=60, labelsize=8)
-plt.yticks(np.arange(-3, 4, 1))
-plt.xlim(-2*np.pi, 2*np.pi)
-plt.ylim(-3, 3)
-plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(np.pi/6))
-plt.gca().yaxis.set_minor_locator(plt.MultipleLocator(1))
-` : `
-plt.xticks(np.arange(-10, 11, 1))
-plt.yticks(np.arange(-10, 11, 1))
-plt.minorticks_on()
-plt.xlim(-10, 10)
-plt.ylim(-10, 10)
-`}
-
-# Customize axes
-ax = plt.gca()
-ax.spines['bottom'].set_position('zero')
-ax.spines['left'].set_position('zero')
-ax.spines['bottom'].set_linewidth(2)
-ax.spines['left'].set_linewidth(2)
-ax.spines['top'].set_color('none')
-ax.spines['right'].set_color('none')
-
-plt.xlabel('${isTrigonometric ? "x (radians)" : "x"}', fontsize=14, fontweight='bold', loc='right', labelpad=10)
-plt.ylabel('y', fontsize=14, fontweight='bold', loc='top', labelpad=10)
-
-plt.legend()
-plt.show()
-`;
+    if (yi !== null && isFinite(yi)) {
+      x.push(xi);
+      y.push(yi);
+    }
   }
+  return { x, y };
+}
 
-  async function handlePredefinedFunction(functionType) {
-    const parametersBox = document.getElementById('parameters-box');
-    const updatePlotButton = document.getElementById('update-plot');
-    let parameters = {};
-    let equation = '';
+function renderPlot(type, params) {
+  const { x, y } = generateXYData(type, params);
+  const isTrig = ['sine', 'cosine', 'tangent'].includes(type);
 
-    // Set initial parameters for each function
-    switch (functionType) {
-      case 'linear':
-        parameters = { a: 1, b: 0 };
-        equation = 'y = (a) * x + (b)';
-        break;
-      case 'quadratic':
-        parameters = { a: 1, b: 0, c: 0 };
-        equation = 'y = (a) * x² + (b) * x + (c)';
-        break;
-      case 'cubic':
-        parameters = { a: 1, b: 0, c: 0, d: 0 };
-        equation = 'y = (a) * x³ + (b) * x² + (c) * x + (d)';
-        break;
-      case 'sine':
-        parameters = { amplitude: 1, frequency: 1, phase: 0 };
-        equation = 'y = sin(x)';
-        break;
-      case 'cosine':
-        parameters = { amplitude: 1, frequency: 1, phase: 0 };
-        equation = 'y = cos(x)';
-        break;
-      case 'tangent':
-        parameters = { amplitude: 1, frequency: 1, phase: 0 };
-        equation = 'y = tan(x)';
-        break;
-      case 'exponential':
-        parameters = { a: 1 };
-        equation = 'y = (a) * eˣ';
-        break;
-      case 'logarithmic':
-        parameters = { a: 1 };
-        equation = 'y = (a) * ln|x|';
-        break;
-      case 'absolute':
-        parameters = { a: 1 };
-        equation = 'y = (a) * |x|';
-        break;
-      case 'square-root':
-        parameters = { a: 1 };
-        equation = 'y = (a) * √|x|';
-        break;
-    }
+  const trace = {
+    x, y,
+    mode: 'lines',
+    name: `y = ${type}(x)`,
+    line: { color: 'blue' }
+  };
 
-    // Show parameters box
-    parametersBox.style.display = 'block';
-    parametersBox.innerHTML = ''; // Clear previous values
+  const piTicks = [-2, -1.5, -1, -0.75, -5/6, -2/3, -0.5, -1/3, -0.25, -1/6, 0,
+                    1/6, 0.25, 1/3, 0.5, 2/3, 5/6, 0.75, 1, 1.5, 2].map(x => x * Math.PI);
 
-    // Display equation
-    const equationDisplay = document.createElement('div');
-    equationDisplay.textContent = `Equation: ${equation}`;
-    equationDisplay.style.marginBottom = '15px';
-    equationDisplay.style.fontWeight = 'bold';
-    parametersBox.appendChild(equationDisplay);
+  const piLabels = ['-2π','-3π/2','-π','-3π/4','-5π/6','-2π/3','-π/2','-π/3','-π/4','-π/6',
+                    '0','π/6','π/4','π/3','π/2','2π/3','5π/6','3π/4','π','3π/2','2π'];
 
-    // Create input elements for parameters
-    for (const key in parameters) {
-      const parameterInput = document.createElement('div');
-      parameterInput.classList.add('parameter-input');
+  const layout = {
+    title: `Plot of ${type}`,
+    xaxis: {
+      title: isTrig ? 'x (radians)' : 'x',
+      tickvals: isTrig ? piTicks : undefined,
+      ticktext: isTrig ? piLabels : undefined,
+      tickangle: isTrig ? 60 : 0,
+      range: isTrig ? [-2 * Math.PI, 2 * Math.PI] : [-10, 10],
+      zeroline: true,
+      zerolinewidth: 2,
+      showgrid: true,
+      gridcolor: 'rgba(0,0,0,0.1)'
+    },
+    yaxis: {
+      title: 'y',
+      range: isTrig ? [-3, 3] : [-10, 10],
+      zeroline: true,
+      zerolinewidth: 2,
+      dtick: 1,
+      showgrid: true,
+      gridcolor: 'rgba(0,0,0,0.1)'
+    },
+    margin: { t: 50, l: 60, r: 20, b: 60 },
+    legend: { x: 0, y: 1 },
+    plot_bgcolor: '#fff'
+  };
 
-      const label = document.createElement('label');
-      label.textContent = `${key}:`;
-      parameterInput.appendChild(label);
+  Plotly.newPlot('image-box', [trace], layout, { responsive: true });
+}
 
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.value = parameters[key];
-      input.id = `parameter-${key}`;
-      parameterInput.appendChild(input);
+function parseUserInput(text) {
+  const input = text.toLowerCase();
+  let type = null;
+  const params = {};
 
-      parametersBox.appendChild(parameterInput);
-    }
+  if (input.match(/(parabola|quadratic|парабол|kvad)/)) type = 'quadratic';
+  else if (input.match(/(linear|линейн|lineaar)/)) type = 'linear';
+  else if (input.match(/(cubic|кубическ|kuup)/)) type = 'cubic';
+  else if (input.match(/(sine|sinus|синус)/)) type = 'sine';
+  else if (input.match(/(cosine|cosinus|косинус)/)) type = 'cosine';
+  else if (input.match(/(tangent|tangen|тангенс)/)) type = 'tangent';
+  else if (input.match(/(exponential|экспонент|eksponentsiaal)/)) type = 'exponential';
+  else if (input.match(/(logarithmic|логарифм|logaritm)/)) type = 'logarithmic';
+  else if (input.match(/(absolute|абсолют|absoluut)/)) type = 'absolute';
+  else if (input.match(/(square-root|корень|ruutjuur)/)) type = 'square-root';
 
-    // Add Update Plot button
-    parametersBox.appendChild(updatePlotButton);
-
-    // Generate plot code with initial parameters
-    const plotCode = generatePlotCodeWithParameters(functionType, parameters);
-
-    // Send code to server to generate plot
-    await sendToFlaskServer(functionType, parameters);
-  }
-
-  async function handleUserInput(userInput) {
-    let functionType = '';
-
-    userInput = userInput.toLowerCase();
-
-    if (
-      userInput.includes('парабол') ||
-      userInput.includes('parabola') ||
-      userInput.includes('quadratic') ||
-      userInput.includes('kvadraat')
-    ) {
-      functionType = 'quadratic';
-    } else if (
-      userInput.includes('линейн') ||
-      userInput.includes('linear') ||
-      userInput.includes('lineaar')
-    ) {
-      functionType = 'linear';
-    } else if (
-      userInput.includes('кубическ') ||
-      userInput.includes('cubic') ||
-      userInput.includes('kuup')
-    ) {
-      functionType = 'cubic';
-    } else if (
-      userInput.includes('косинус') ||
-      userInput.includes('cosine') ||
-      userInput.includes('kosinus')
-    ) {
-      functionType = 'cosine';
-    } else if (
-      userInput.includes('синус') ||
-      userInput.includes('sine') ||
-      userInput.includes('sinus')
-    ) {
-      functionType = 'sine';
-    } else if (
-      userInput.includes('тангенс') ||
-      userInput.includes('tangen')
-    ) {
-      functionType = 'tangent';
-    } else if (
-      userInput.includes('экспонент') ||
-      userInput.includes('exponential') ||
-      userInput.includes('eksponentsiaal')
-    ) {
-      functionType = 'exponential';
-    } else if (
-      userInput.includes('логарифм') ||
-      userInput.includes('logarithmic') ||
-      userInput.includes('logaritm')
-    ) {
-      functionType = 'logarithmic';
-    } else if (
-      userInput.includes('абсолют') ||
-      userInput.includes('absolute') ||
-      userInput.includes('absoluut')
-    ) {
-      functionType = 'absolute';
-    } else if (
-      userInput.includes('корень') ||
-      userInput.includes('square-root') ||
-      userInput.includes('ruutjuur')
-    ) {
-      functionType = 'square-root';
-    } else {
-      // If function type is not recognized
-      console.error('Unknown function type');
-      alert('Unknown function type. Please try again.');
-      return; // Stop execution
-    }
-
-    console.log(`Detected function type: ${functionType}`);
-    await handlePredefinedFunction(functionType);
-  }
-
-  sendButton.addEventListener('click', async () => {
-    const userInput = userInputField.value;
-    const selectedFunction = functionSelect.value;
-
-    if (selectedFunction) {
-      await handlePredefinedFunction(selectedFunction);
-    } else if (userInput) {
-      await handleUserInput(userInput);
-    }
+  const matches = [...input.matchAll(/(amplitude|frequency|phase|a|b|c|d)\s*=?\s*(-?\d+(\.\d+)?)/g)];
+  matches.forEach(match => {
+    const key = match[1];
+    const value = parseFloat(match[2]);
+    params[key] = value;
   });
 
-  functionSelect.addEventListener('change', async () => {
-    const selectedFunction = functionSelect.value;
-    if (selectedFunction && !userInputField.value) {
-      await handlePredefinedFunction(selectedFunction);
-    }
-  });
+  if (type === 'linear' && input.includes('negative slope')) params.a = -1;
 
-  userInputField.addEventListener('input', () => {
-    // If user entered a word, determine function type by keywords
-    const inputVal = userInputField.value.trim().toLowerCase();
-    let functionType = '';
+  return { type, params };
+}
 
-    if (inputVal.includes('linear')) {
-      functionType = 'linear';
-    } else if (inputVal.includes('quadratic') || inputVal.includes('parabola')) {
-      functionType = 'quadratic';
-    } else if (inputVal.includes('cubic')) {
-      functionType = 'cubic';
-    } else if (inputVal.includes('sine')) {
-      functionType = 'sine';
-    } else if (inputVal.includes('cosine')) {
-      functionType = 'cosine';
-    } else if (inputVal.includes('tangent')) {
-      functionType = 'tangent';
-    } else if (inputVal.includes('exponential')) {
-      functionType = 'exponential';
-    } else if (inputVal.includes('logarithmic')) {
-      functionType = 'logarithmic';
-    } else if (inputVal.includes('absolute')) {
-      functionType = 'absolute';
-    } else if (inputVal.includes('square-root')) {
-      functionType = 'square-root';
-    }
+// EVENT LISTENERS
+functionSelect.addEventListener('change', () => {
+  const selected = functionSelect.value;
+  if (selected) updateParameterInputs(selected);
+});
 
-    // If function type is recognized, update parameters and set select value
-    if (functionType) {
-      functionSelect.value = functionType;
-      handlePredefinedFunction(functionType);
-    }
-  });
-
-  updatePlotButton.addEventListener('click', async () => {
-    const functionType = document.getElementById('function-select').value;
-    const parameters = {};
-
-    // Collect parameters from input in #parameters-box
-    parametersBox.querySelectorAll('.parameter-input input').forEach(input => {
-      const key = input.id.replace('parameter-', '');
-      parameters[key] = parseFloat(input.value);
+plotButton.addEventListener('click', () => {
+  const userInput = userInputField?.value?.trim();
+  if (userInput) {
+    const { type, params } = parseUserInput(userInput);
+    if (!type) return alert('Could not detect function type.');
+    functionSelect.value = type;
+    updateParameterInputs(type);
+    Object.keys(params).forEach(key => {
+      const el = document.getElementById(`param-${key}`);
+      if (el) el.value = params[key];
     });
-
-    // Generate code to update plot
-    const plotCode = generatePlotCodeWithParameters(functionType, parameters);
-
-    // Send code to server to update plot
-    await sendToFlaskServer(functionType, parameters);
-  });
+    renderPlot(type, { ...getDefaultParams(type), ...params });
+  } else {
+    const type = functionSelect.value;
+    if (!type) return;
+    const params = getParametersFromInputs();
+    renderPlot(type, params);
+  }
 });
