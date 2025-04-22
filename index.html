@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Function Generator</title>
+  <style>
+    /* Чтобы весь контент не выходил за пределы экрана */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #fdf2e3;
+      overflow-x: hidden;
+    }
+    .container {
+      width: 100vw;
+      min-height: 100vh;
+      padding: 20px;
+      background-color: #f5ede0; /* светлый бежевый */
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px; /* уменьшили отступ между элементами */
+      margin-bottom: 20px;
+      width: 100%;
+      justify-content: center;
+    }
+    #user-input {
+      flex: 0 1 90%; /* теперь поле ввода занимает 90% от доступной ширины */
+      min-width: 250px;
+      padding: 10px;
+      border: 1px solid #777;
+      border-radius: 4px;
+      background-color: #fff;
+      color: #333;
+    }
+    #function-select {
+      flex: 0 0 auto;
+      min-width: 200px;
+      padding: 10px;
+      border: 1px solid #777;
+      border-radius: 4px;
+      background-color: #fff;
+      color: #333;
+      margin-left: 5px;  /* сближаем с полем ввода */
+    }
+    #send-button {
+      flex: 0 0 auto;
+      padding: 10px 20px;
+      background-color: #eebd79;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 5px;  /* сближаем с полем ввода */
+    }
+    #send-button:hover {
+      background-color: #466b00;
+    }
+    /* Контент результатов и параметров занимает всю ширину родителя */
+    #result-box,
+    #image-box,
+    #parameters-box {
+      width: 100%;
+    }
+    #result-box {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #777;
+      border-radius: 4px;
+      background-color: #fdf7ed;
+      white-space: pre-wrap;
+      text-align: left;
+      font-family: monospace;
+      color: #333;
+    }
+    #image-box {
+      margin-top: 20px;
+      height: 800px;
+      border: 1px solid #777;
+      border-radius: 4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #eee8dc;
+    }
+    #image-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .loading {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(50, 50, 50, 0.95);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.5);
+      z-index: 1000;
+      text-align: center;
+      min-width: 200px;
+    }
+    .loading-text {
+      color: #f0f0f0;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .loading-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+    .loading-dots span {
+      width: 12px;
+      height: 12px;
+      background-color: #f0f0f0;
+      border-radius: 50%;
+      display: inline-block;
+      animation: bounce 0.8s infinite ease-in-out both;
+    }
+    .loading-dots span:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+    .loading-dots span:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+    @keyframes bounce {
+      0%, 80%, 100% {
+          transform: scale(0);
+      }
+      40% {
+          transform: scale(1);
+      }
+    }
+    /* Центрирование блока с параметрами */
+    #parameters-box {
+      margin: 20px auto;         
+      padding: 15px;
+      border: 1px solid #777;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 970px;
+      text-align: center;        
+      background-color: #e9e0d6;
+      color: #333;
+    }
+    .parameter-input {
+      margin: 10px 0;
+    }
+    .parameter-input label {
+      display: inline-block;
+      width: 100px;
+      margin-right: 10px;
+    }
+    .parameter-input input {
+      width: 100px;
+      padding: 5px;
+      border: 1px solid #777;
+      border-radius: 4px;
+      background-color: #fff;
+      color: #333;
+    }
+    #update-plot {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #006400;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #update-plot:hover {
+      background-color: #004b00;
+    }
+    .title {
+      font-size: 32px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #auth-container {
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    #password-input {
+      padding: 10px;
+      border: 1px solid #777;
+      border-radius: 4px;
+    }
+
+    #auth-button {
+      padding: 10px 20px;
+      background-color: #006400;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #auth-button:hover {
+      background-color: #004b00;
+    }
+
+    #auth-error {
+      color: red;
+      display: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Блок авторизации -->
+  <div id="auth-container">
+    <h2>Enter Password</h2>
+    <input type="password" id="password-input" placeholder="Enter password" style="padding: 10px; border: 1px solid #777; border-radius: 4px;">
+    <button id="auth-button" style="padding: 10px 20px; background-color: #006400; color: white; border: none; border-radius: 4px; cursor: pointer;">Submit</button>
+    <p id="auth-error" style="color: red; display: none; margin-top: 10px;">Incorrect password. Please try again.</p>
+  </div>
+
+  <!-- Основной контент (скрыт до авторизации) -->
+  <div id="main-container" style="display: none;">
+    <!-- Здесь ваш основной контент (например, генерирование графика) -->
+    <div class="container">
+      <h1 class="title">Math Function Generator</h1>
+      <div class="input-group">
+        <input type="text" id="user-input" placeholder="Enter function name…">
+        <select id="function-select">
+          <option value="">Select a function...</option>
+          <option value="linear">Linear (y = x)</option>
+          <option value="quadratic">Quadratic (y = x²)</option>
+          <option value="cubic">Cubic (y = x³)</option>
+          <option value="sine">Sine (y = sin(x))</option>
+          <option value="cosine">Cosine (y = cos(x))</option>
+          <option value="tangent">Tangent (y = tan(x))</option>
+          <option value="exponential">Exponential (y = eˣ)</option>
+          <option value="logarithmic">Logarithmic (y = ln|x|)</option>
+          <option value="absolute">Absolute Value (y = |x|)</option>
+          <option value="square-root">Square Root (y = √|x|)</option>
+        </select>
+        <button id="send-button">Generate Plot</button>
+      </div>
+      <div id="parameters-box">
+        <!-- Параметры будут добавляться динамически -->
+        <button id="update-plot">Update Plot</button>
+      </div>
+      <div id="image-box"></div>
+      <div class="loading" id="loading-indicator">
+        <div class="loading-text">AI is thinking...</div>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  </div>
+  <script src="js/script.js"></script>
+</body>
+</html>
