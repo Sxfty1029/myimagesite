@@ -35,7 +35,9 @@ USERS = {
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 CORS(app)  # Разрешает запросы с других источников
-app.secret_key = 'supersecretkey'
+
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-secret')
+
 
 @app.route('/')
 def home():
@@ -138,7 +140,7 @@ def generate_image():
         logger.error(f"Server error: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@app.route('/generate_plot', methods=['POST'])
+@app.route('/generate-image', methods=['POST'])
 def generate_plot():
     try:
         # Получаем код Python из запроса
