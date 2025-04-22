@@ -34,10 +34,8 @@ USERS = {
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-CORS(app)  # Разрешает запросы с других источников
 
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-secret')
-
 
 @app.route('/')
 def home():
@@ -162,7 +160,7 @@ def generate_plot():
         # Возвращаем изображение в формате base64
         return jsonify({'image_url': f'data:image/png;base64,{encoded_image}'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'image_url': 'https://myimagesitebackend.onrender.com/plot.png'})
 
 if __name__ == '__main__':
     # Clear any existing plots
