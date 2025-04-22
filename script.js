@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     imageBox.innerHTML = ''; // Clear previous image
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/generate_plot', {
+      const response = await fetch('https://myimagesitebackend.onrender.com/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
