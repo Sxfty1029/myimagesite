@@ -64,7 +64,7 @@ def generate_plot_image(code):
         logger.error(f"Error generating plot: {str(e)}")
         return None
 
-@app.route('/generate_plot', methods=['POST'])
+@app.route('/generate-plot', methods=['POST'])
 def generate_plot():
     try:
         data = request.json
