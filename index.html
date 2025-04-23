@@ -4,47 +4,130 @@
   <meta charset="UTF-8">
   <title>Function Plotter</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #fdf6e3;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .container {
+      flex: 1;
+      width: 95%; /* Adjusted to cover almost the full width */
+      margin: 20px auto;
+      padding: 20px;
+      background: #fffaf0;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    #image-box {
+      width: 100%; /* Full width */
+      height: 700px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .footer-title {
+      text-align: center;
+      font-size: 36px; /* Increased font size */
+      margin: 20px 20px 40px; /* Added bottom margin for spacing */
+      color: #3a2f1d;
+      font-weight: bold;
+    }
+    .control-panel {
+      display: flex;
+      gap: 20px; /* Reduced gap for better alignment */
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+    .control-panel > div {
+      flex: 1;
+      min-width: 48%; /* Adjusted to make the boxes wider */
+    }
+    select, textarea, button {
+      width: 100%; /* Full width for inputs */
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 18px; /* Increased font size */
+    }
+    button {
+      background-color: #c4a77d;
+      color: white;
+      cursor: pointer;
+      font-size: 18px; /* Increased font size */
+    }
+    label {
+      font-size: 18px; /* Increased font size for labels */
+      font-weight: bold;
+    }
+  </style>
+  <script>
+    function checkPassword() {
+      const password = document.getElementById('password-input').value;
+      const errorMsg = document.getElementById('error-msg');
+      if (password === 'mathbot1') { // Replace 'your_password' with the actual password
+        document.getElementById('password-screen').style.display = 'none';
+        document.getElementById('app-content').style.display = 'block';
+      } else {
+        errorMsg.style.display = 'block';
+      }
+    }
+  </script>
 </head>
-<body style="margin: 0; font-family: sans-serif; background-color: #fdf6e3; color: #333;">
-
-  <div style="max-width: 1500px; margin: 40px auto; padding: 30px; background: #fffaf0; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-
-    <!-- Plot Area -->
-    <div id="image-box" style="width: 100%; height: 550px; border: 1px solid #ccc; background: white; border-radius: 8px; margin-bottom: 40px;"></div>
-
-    <!-- Control Panel -->
-    <div style="display: flex; gap: 60px; flex-wrap: wrap; justify-content: space-between;">
-
-      <!-- Left Side -->
-      <div style="flex: 1.2; min-width: 350px;">
-        <label for="function-select" style="font-weight: bold;">Predefined Function:</label>
-        <select id="function-select" style="width: 100%; padding: 12px; margin: 12px 0; border-radius: 6px; border: 1px solid #ccc;">
-          <option value="">-- Select --</option>
-          <option value="linear">Linear</option>
-          <option value="quadratic">Quadratic</option>
-          <option value="cubic">Cubic</option>
-          <option value="sine">Sine</option>
-          <option value="cosine">Cosine</option>
-          <option value="tangent">Tangent</option>
-          <option value="exponential">Exponential</option>
-          <option value="logarithmic">Logarithmic</option>
-          <option value="absolute">Absolute</option>
-          <option value="square-root">Square Root</option>
-        </select>
-
-        <div id="parameters-box" style="margin-top: 20px;"></div>
-      </div>
-
-      <!-- Right Side -->
-      <div style="flex: 1; min-width: 350px;">
-        <label for="user-input" style="font-weight: bold;">Describe your function:</label>
-        <textarea id="user-input" placeholder="e.g. 'sine with amplitude 3'" style="width: 100%; padding: 12px; margin: 12px 0 20px; border-radius: 6px; border: 1px solid #ccc; min-height: 140px;"></textarea>
-        <button id="plot-button" style="padding: 14px 24px; font-size: 16px; border: none; border-radius: 6px; background-color: #c4a77d; color: white; cursor: pointer;">Plot</button>
-      </div>
-
-    </div>
+<body>
+  <!-- Password Gate -->
+  <div id="password-screen" style="text-align: center; padding: 100px;">
+    <h2>Enter Password</h2>
+    <input id="password-input" type="password" style="padding: 10px; font-size: 16px;" />
+    <button onclick="checkPassword()" style="padding: 10px 20px; font-size: 16px; margin-left: 10px;">Enter</button>
+    <p id="error-msg" style="color: red; margin-top: 10px; display: none;">Incorrect password</p>
   </div>
 
+  <!-- Main App (initially hidden) -->
+  <div id="app-content" style="display: none;">
+    <!-- Title at the Top -->
+    <h1 class="footer-title">Function Plotter App</h1>
+
+    <div class="container">
+      <!-- Plot Area -->
+      <div id="image-box"></div>
+
+      <!-- Control Panel -->
+      <div class="control-panel">
+        <!-- Left Side -->
+        <div>
+          <label for="function-select">Predefined Function:</label>
+          <select id="function-select">
+            <option value="">-- Select --</option>
+            <option value="linear">Linear (y = ax + b)</option>
+            <option value="quadratic">Quadratic (y = ax² + bx + c)</option>
+            <option value="cubic">Cubic (y = ax³ + bx² + cx + d)</option>
+            <option value="sine">Sine (y = sin(x))</option>
+            <option value="cosine">Cosine (y = cos(x))</option>
+            <option value="tangent">Tangent (y = tan(x))</option>
+            <option value="exponential">Exponential (y = a * e^x)</option>
+            <option value="logarithmic">Logarithmic (y = a * log(x))</option>
+            <option value="absolute">Absolute (y = a * |x|)</option>
+            <option value="square-root">Square Root (y = a * √x)</option>
+          </select>
+          <div id="parameters-box" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Right Side -->
+        <div>
+          <label for="user-input">Describe your function:</label>
+          <textarea id="user-input" placeholder="e.g. 'sine with amplitude 3'"></textarea>
+          <button id="plot-button">Plot</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
