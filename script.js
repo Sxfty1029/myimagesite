@@ -24,9 +24,9 @@ function getEquationTemplate(type) {
     case 'linear': return 'y = a * x + b';
     case 'quadratic': return 'y = a * x² + b * x + c';
     case 'cubic': return 'y = a * x³ + b * x² + c * x + d';
-    case 'sine': return 'y = sin(x)';
-    case 'cosine': return 'y = cos(x)';
-    case 'tangent': return 'y = tan(x)';
+    case 'sine': return 'y = amplitude * sin(frequency * x + phase)';
+    case 'cosine': return 'y = amplitude * cos(frequency * x + phase)';
+    case 'tangent': return 'y = amplitude * tan(frequency * x + phase)';
     case 'exponential': return 'y = a * eˣ';
     case 'logarithmic': return 'y = a * ln(|x|)';
     case 'absolute': return 'y = a * |x|';
@@ -35,14 +35,12 @@ function getEquationTemplate(type) {
   }
 }
 
-
 function updateParameterInputs(type) {
   parametersBox.innerHTML = '';
 
   const params = getDefaultParams(type);
   const equationText = getEquationTemplate(type);
 
-  // Equation display
   const equationDiv = document.createElement('div');
   equationDiv.textContent = `Equation: ${equationText}`;
   equationDiv.style.marginBottom = '15px';
@@ -50,7 +48,6 @@ function updateParameterInputs(type) {
   equationDiv.style.fontSize = '16px';
   parametersBox.appendChild(equationDiv);
 
-  // Parameter inputs
   for (const key in params) {
     const label = document.createElement('label');
     label.textContent = key;
@@ -68,7 +65,6 @@ function updateParameterInputs(type) {
   }
 }
 
-
 function getParametersFromInputs() {
   const inputs = parametersBox.querySelectorAll('input');
   const params = {};
@@ -83,32 +79,22 @@ function generateXYData(type, params) {
   const x = [];
   const y = [];
   const step = 0.1;
-  const range = ['sine', 'cosine', 'tangent'].includes(type) ? 2 * Math.PI : 10;
+  const range = ['sine', 'cosine', 'tangent'].includes(type) ? 6 * Math.PI : 30; // Tripled range
 
   for (let i = -range; i <= range; i += step) {
     let xi = i;
     let yi = null;
     switch (type) {
-      case 'linear':
-        yi = params.a * xi + params.b; break;
-      case 'quadratic':
-        yi = params.a * xi ** 2 + params.b * xi + params.c; break;
-      case 'cubic':
-        yi = params.a * xi ** 3 + params.b * xi ** 2 + params.c * xi + params.d; break;
-      case 'sine':
-        yi = params.amplitude * Math.sin(params.frequency * xi + params.phase); break;
-      case 'cosine':
-        yi = params.amplitude * Math.cos(params.frequency * xi + params.phase); break;
-      case 'tangent':
-        yi = params.amplitude * Math.tan(params.frequency * xi + params.phase); break;
-      case 'exponential':
-        yi = params.a * Math.exp(xi); break;
-      case 'logarithmic':
-        yi = xi !== 0 ? params.a * Math.log(Math.abs(xi)) : null; break;
-      case 'absolute':
-        yi = params.a * Math.abs(xi); break;
-      case 'square-root':
-        yi = params.a * Math.sqrt(Math.abs(xi)); break;
+      case 'linear': yi = params.a * xi + params.b; break;
+      case 'quadratic': yi = params.a * xi ** 2 + params.b * xi + params.c; break;
+      case 'cubic': yi = params.a * xi ** 3 + params.b * xi ** 2 + params.c * xi + params.d; break;
+      case 'sine': yi = params.amplitude * Math.sin(params.frequency * xi + params.phase); break;
+      case 'cosine': yi = params.amplitude * Math.cos(params.frequency * xi + params.phase); break;
+      case 'tangent': yi = params.amplitude * Math.tan(params.frequency * xi + params.phase); break;
+      case 'exponential': yi = params.a * Math.exp(xi); break;
+      case 'logarithmic': yi = xi !== 0 ? params.a * Math.log(Math.abs(xi)) : null; break;
+      case 'absolute': yi = params.a * Math.abs(xi); break;
+      case 'square-root': yi = params.a * Math.sqrt(Math.abs(xi)); break;
     }
     if (yi !== null && isFinite(yi)) {
       x.push(xi);
@@ -129,11 +115,17 @@ function renderPlot(type, params) {
     line: { color: 'blue' }
   };
 
-  const piTicks = [-2, -1.5, -1, -0.75, -5/6, -2/3, -0.5, -1/3, -0.25, -1/6, 0,
-                    1/6, 0.25, 1/3, 0.5, 2/3, 5/6, 0.75, 1, 1.5, 2].map(x => x * Math.PI);
+  const piTicks = [
+    -2 * Math.PI, -3 * Math.PI / 2, -Math.PI, -3 * Math.PI / 4, -5 * Math.PI / 6, 
+-2 * Math.PI / 3, -Math.PI / 2, -Math.PI / 3, -Math.PI / 4, -Math.PI / 6, 0,
+    Math.PI / 6, Math.PI / 4, Math.PI / 3, Math.PI / 2, 2 * Math.PI / 3, 
+    5 * Math.PI / 6, 3 * Math.PI / 4, Math.PI, 3 * Math.PI / 2, 2 * Math.PI
+  ];
 
-  const piLabels = ['-2π','-3π/2','-π','-3π/4','-5π/6','-2π/3','-π/2','-π/3','-π/4','-π/6',
-                    '0','π/6','π/4','π/3','π/2','2π/3','5π/6','3π/4','π','3π/2','2π'];
+  const piLabels = [
+    '-2π', '-3π/2', '-π', '-3π/4', '-5π/6', '-2π/3', '-π/2', '-π/3', '-π/4', '-π/6', 
+'0', 'π/6', 'π/4', 'π/3', 'π/2', '2π/3', '5π/6', '3π/4', 'π', '3π/2', '2π'
+  ];
 
   const layout = {
     title: `Plot of ${type}`,
@@ -142,27 +134,55 @@ function renderPlot(type, params) {
       tickvals: isTrig ? piTicks : undefined,
       ticktext: isTrig ? piLabels : undefined,
       tickangle: isTrig ? 60 : 0,
-      range: isTrig ? [-2 * Math.PI, 2 * Math.PI] : [-10, 10],
-      zeroline: true,
-      zerolinewidth: 2,
+      range: isTrig ? [-12 * Math.PI, 12 * Math.PI] : [-60, 60], // Tripled range
       showgrid: true,
-      gridcolor: 'rgba(0,0,0,0.1)'
+      gridcolor: 'rgba(0,0,0,0.1)',
+      showline: true,
+      zeroline: false,
+      ticks: 'outside',
+      ticklabelposition: 'inside',
+      tickpadding: 2
     },
     yaxis: {
       title: 'y',
-      range: isTrig ? [-3, 3] : [-10, 10],
-      zeroline: true,
-      zerolinewidth: 2,
-      dtick: 1,
+      range: isTrig ? [-18, 18] : [-60, 60], // Tripled range
       showgrid: true,
-      gridcolor: 'rgba(0,0,0,0.1)'
+      gridcolor: 'rgba(0,0,0,0.1)',
+      showline: true,
+      zeroline: false,
+      ticks: 'outside',
+      ticklabelposition: 'inside',
+      tickpadding: 2
     },
-    margin: { t: 50, l: 60, r: 20, b: 60 },
+    margin: { t: 50, l: 70, r: 70, b: 70 },
     legend: { x: 0, y: 1 },
-    plot_bgcolor: '#fff'
+    plot_bgcolor: '#fff',
+    shapes: [
+      {
+        type: 'line',
+        x0: -1000, // Extended x=0 line
+        x1: 1000,
+        y0: 0,
+        y1: 0,
+        line: { color: 'black', width: 4 } // Thicker line
+      },
+      {
+        type: 'line',
+        x0: 0,
+        x1: 0,
+        y0: -1000, // Extended y=0 line
+        y1: 1000,
+        line: { color: 'black', width: 4 } // Thicker line
+      }
+    ]
   };
 
-  Plotly.newPlot('image-box', [trace], layout, { responsive: true });
+  Plotly.newPlot('image-box', [trace], layout, {
+    responsive: true,
+    displayModeBar: true,
+    displaylogo: false,
+    scrollZoom: true
+  });
 }
 
 function parseUserInput(text) {
@@ -193,7 +213,6 @@ function parseUserInput(text) {
   return { type, params };
 }
 
-// EVENT LISTENERS
 functionSelect.addEventListener('change', () => {
   const selected = functionSelect.value;
   if (selected) updateParameterInputs(selected);
