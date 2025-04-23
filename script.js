@@ -190,16 +190,16 @@ function parseUserInput(text) {
   let type = null;
   const params = {};
 
-  if (input.match(/(parabola|quadratic|парабол|kvad)/)) type = 'quadratic';
-  else if (input.match(/(linear|линейн|lineaar)/)) type = 'linear';
-  else if (input.match(/(cubic|кубическ|kuup)/)) type = 'cubic';
-  else if (input.match(/(sine|sinus|синус)/)) type = 'sine';
-  else if (input.match(/(cosine|cosinus|косинус)/)) type = 'cosine';
-  else if (input.match(/(tangent|tangen|тангенс)/)) type = 'tangent';
-  else if (input.match(/(exponential|экспонент|eksponentsiaal)/)) type = 'exponential';
-  else if (input.match(/(logarithmic|логарифм|logaritm)/)) type = 'logarithmic';
-  else if (input.match(/(absolute|абсолют|absoluut)/)) type = 'absolute';
-  else if (input.match(/(square-root|корень|ruutjuur)/)) type = 'square-root';
+  if (input.match(/\b(parabola|quadratic|парабол|kvad)\b/)) type = 'quadratic';
+  else if (input.match(/\b(linear|линейн|lineaar)\b/)) type = 'linear';
+  else if (input.match(/\b(cubic|кубическ|kuup)\b/)) type = 'cubic';
+  else if (input.match(/\b(cosine|cosinus|косинус)\b/)) type = 'cosine'; // Check for cosine first
+  else if (input.match(/\b(sine|sinus|синус)\b/)) type = 'sine';         // Check for sine after cosine
+  else if (input.match(/\b(tangent|tangen|тангенс)\b/)) type = 'tangent';
+  else if (input.match(/\b(exponential|экспонент|eksponentsiaal)\b/)) type = 'exponential';
+  else if (input.match(/\b(logarithmic|логарифм|logaritm)\b/)) type = 'logarithmic';
+  else if (input.match(/\b(absolute|абсолют|absoluut)\b/)) type = 'absolute';
+  else if (input.match(/\b(square-root|корень|ruutjuur)\b/)) type = 'square-root';
 
   const matches = [...input.matchAll(/(amplitude|frequency|phase|a|b|c|d)\s*=?\s*(-?\d+(\.\d+)?)/g)];
   matches.forEach(match => {
