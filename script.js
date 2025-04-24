@@ -225,11 +225,9 @@ function transliterateAndTranslate(text) {
   for (const [src, target] of Object.entries(map)) {
     result = result.replaceAll(src, target);
   }
-
   return result;
 }
   
-
 function parseUserInput(text) {
   // Convert Cyrillic to English keywords
   const input = transliterateAndTranslate(text).toLowerCase().trim();
