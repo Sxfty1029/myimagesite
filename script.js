@@ -117,35 +117,39 @@ function renderPlot(type, params) {
 
   const piTicks = [
     -2 * Math.PI, -3 * Math.PI / 2, -Math.PI, -3 * Math.PI / 4, -5 * Math.PI / 6, 
--2 * Math.PI / 3, -Math.PI / 2, -Math.PI / 3, -Math.PI / 4, -Math.PI / 6, 0,
+    -2 * Math.PI / 3, -Math.PI / 2, -Math.PI / 3, -Math.PI / 4, -Math.PI / 6, 0,
     Math.PI / 6, Math.PI / 4, Math.PI / 3, Math.PI / 2, 2 * Math.PI / 3, 
     5 * Math.PI / 6, 3 * Math.PI / 4, Math.PI, 3 * Math.PI / 2, 2 * Math.PI
   ];
 
   const piLabels = [
     '-2π', '-3π/2', '-π', '-3π/4', '-5π/6', '-2π/3', '-π/2', '-π/3', '-π/4', '-π/6', 
-'0', 'π/6', 'π/4', 'π/3', 'π/2', '2π/3', '5π/6', '3π/4', 'π', '3π/2', '2π'
+    '0', 'π/6', 'π/4', 'π/3', 'π/2', '2π/3', '5π/6', '3π/4', 'π', '3π/2', '2π'
   ];
 
   const layout = {
     title: `Plot of ${type}`,
+    dragmode: 'pan', // Set default interaction mode to pan
     xaxis: {
       title: isTrig ? 'x (radians)' : 'x',
       tickvals: isTrig ? piTicks : undefined,
       ticktext: isTrig ? piLabels : undefined,
       tickangle: isTrig ? 60 : 0,
-      range: isTrig ? [-12 * Math.PI, 12 * Math.PI] : [-60, 60], // Tripled range
+      range: isTrig ? [-12 * Math.PI, 12 * Math.PI] : [-60, 60],
       showgrid: true,
       gridcolor: 'rgba(0,0,0,0.1)',
       showline: true,
       zeroline: false,
       ticks: 'outside',
       ticklabelposition: 'inside',
-      tickpadding: 2
+      tickpadding: 2,
+      // For non-trigonometric functions, use automatic tick spacing
+      tickmode: isTrig ? undefined : 'auto'
+      // Remove dtick for non-trigonometric functions
     },
     yaxis: {
       title: 'y',
-      range: isTrig ? [-18, 18] : [-60, 60], // Tripled range
+      range: isTrig ? [-18, 18] : [-60, 60],
       showgrid: true,
       gridcolor: 'rgba(0,0,0,0.1)',
       showline: true,
@@ -160,19 +164,19 @@ function renderPlot(type, params) {
     shapes: [
       {
         type: 'line',
-        x0: -1000, // Extended x=0 line
+        x0: -1000,
         x1: 1000,
         y0: 0,
         y1: 0,
-        line: { color: 'black', width: 4 } // Thicker line
+        line: { color: 'black', width: 4 }
       },
       {
         type: 'line',
         x0: 0,
         x1: 0,
-        y0: -1000, // Extended y=0 line
+        y0: -1000,
         y1: 1000,
-        line: { color: 'black', width: 4 } // Thicker line
+        line: { color: 'black', width: 4 }
       }
     ]
   };
@@ -185,25 +189,67 @@ function renderPlot(type, params) {
   });
 }
 
+function transliterateAndTranslate(text) {
+  const map = {
+    'парабола': 'quadratic',
+    'линейная': 'linear',
+    'линейный': 'linear',
+    'линейное': 'linear',
+    'синус': 'sine',
+    'синусоида': 'sine',
+    'косинус': 'cosine',
+    'тангенс': 'tangent',
+    'экспонента': 'exponential',
+    'экспоненциальная': 'exponential',
+    'логарифм': 'logarithmic',
+    'абсолют': 'absolute',
+    'модуль': 'absolute',
+    'корень': 'square-root',
+    'руутюур': 'square-root',
+    'ruutjuur': 'square-root',
+    'амплитуда': 'amplitude',
+    'частота': 'frequency',
+    'фаза': 'phase',
+    'sagedus': 'frequency',
+    'faas': 'phase',
+    'negatiivne kalle': 'negative slope',
+    'отрицательный наклон': 'negative slope',
+    'kvadraatne': 'quadratic',
+    'lineaarne': 'linear',
+    'kuup': 'cubic'
+  };
+
+  let result = text.toLowerCase();
+
+  // Перебираем по ключу и заменяем каждый
+  for (const [src, target] of Object.entries(map)) {
+    result = result.replaceAll(src, target);
+  }
+
+  return result;
+}
+  
+
 function parseUserInput(text) {
-  const input = text.toLowerCase().normalize("NFC");
+  // Convert Cyrillic to English keywords
+  const input = transliterateAndTranslate(text).toLowerCase().trim();
   let type = null;
   const params = {};
 
-  // Function type detection with extended Russian support
   const patterns = {
-    quadratic: /\b(parabola|quadratic|парабол[а-я]*|kvad)\b/,
-    linear: /\b(linear|лине[йи]н[а-я]*|lineaar)\b/,
-    cubic: /\b(cubic|кубическ[а-я]*|kuup)\b/,
-    cosine: /\b(cosine|cosinus|косинус[а-я]*)\b/,
-    sine: /\b(sine|sinus|синус[а-я]*)\b/,
-    tangent: /\b(tangent|tangen|тангенс[а-я]*)\b/,
-    exponential: /\b(exponential|экспонент[а-я]*|eksponentsiaal)\b/,
-    logarithmic: /\b(logarithmic|логарифм[а-я]*|logaritm)\b/,
-    absolute: /\b(absolute|абсолют[а-я]*|absoluut)\b/,
-    "square-root": /\b(square-root|корень|корн[яе][а-я]*|ruutjuur)\b/,
+    quadratic: /\bquadratic\b/,
+    linear: /\blinear\b/,
+    cubic: /\bcubic\b/,
+    sine: /\bsine\b/,
+    cosine: /\bcosine\b/,
+    tangent: /\btangent\b/,
+    exponential: /\bexponential\b/,
+    logarithmic: /\blogarithmic\b/,
+    absolute: /\babsolute\b/,
+    "square-root": /\bsquare\-?root\b/
   };
 
+  // Detect the function type using the transliterated input
   for (const key in patterns) {
     if (patterns[key].test(input)) {
       type = key;
@@ -211,16 +257,19 @@ function parseUserInput(text) {
     }
   }
 
-  // Parameter extraction (remains the same)
-  const matches = [...input.matchAll(/(amplitude|frequency|phase|a|b|c|d)\s*=?\s*(-?\d+(\.\d+)?)/g)];
+  console.log("Detected type:", type);
+
+  // Extract parameters (e.g., amplitude, frequency, phase, a, b, c, d) from the converted input
+  const matches = [...input.matchAll(/(amplitude|frequency|phase|a|b|c|d)\s*[=:]?\s*(-?\d+(\.\d+)?)/g)];
   matches.forEach(match => {
     const key = match[1];
     const value = parseFloat(match[2]);
     params[key] = value;
   });
 
-  // Special logic
-  if (type === 'linear' && input.includes('отрицательный наклон')) params.a = -1;
+  if (type === 'linear' && input.includes('negative slope')) {
+    params.a = -1;
+  }
 
   return { type, params };
 }
