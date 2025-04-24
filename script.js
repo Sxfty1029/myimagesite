@@ -186,21 +186,32 @@ function renderPlot(type, params) {
 }
 
 function parseUserInput(text) {
-  const input = text.toLowerCase();
+  const input = text.toLowerCase().normalize("NFC");
   let type = null;
   const params = {};
 
-  if (input.match(/\b(parabola|quadratic|парабол|kvad)\b/)) type = 'quadratic';
-  else if (input.match(/\b(linear|линейн|lineaar)\b/)) type = 'linear';
-  else if (input.match(/\b(cubic|кубическ|kuup)\b/)) type = 'cubic';
-  else if (input.match(/\b(cosine|cosinus|косинус)\b/)) type = 'cosine'; // Check for cosine first
-  else if (input.match(/\b(sine|sinus|синус)\b/)) type = 'sine';         // Check for sine after cosine
-  else if (input.match(/\b(tangent|tangen|тангенс)\b/)) type = 'tangent';
-  else if (input.match(/\b(exponential|экспонент|eksponentsiaal)\b/)) type = 'exponential';
-  else if (input.match(/\b(logarithmic|логарифм|logaritm)\b/)) type = 'logarithmic';
-  else if (input.match(/\b(absolute|абсолют|absoluut)\b/)) type = 'absolute';
-  else if (input.match(/\b(square-root|корень|ruutjuur)\b/)) type = 'square-root';
+  // Function type detection with extended Russian support
+  const patterns = {
+    quadratic: /\b(parabola|quadratic|парабол[а-я]*|kvad)\b/,
+    linear: /\b(linear|лине[йи]н[а-я]*|lineaar)\b/,
+    cubic: /\b(cubic|кубическ[а-я]*|kuup)\b/,
+    cosine: /\b(cosine|cosinus|косинус[а-я]*)\b/,
+    sine: /\b(sine|sinus|синус[а-я]*)\b/,
+    tangent: /\b(tangent|tangen|тангенс[а-я]*)\b/,
+    exponential: /\b(exponential|экспонент[а-я]*|eksponentsiaal)\b/,
+    logarithmic: /\b(logarithmic|логарифм[а-я]*|logaritm)\b/,
+    absolute: /\b(absolute|абсолют[а-я]*|absoluut)\b/,
+    "square-root": /\b(square-root|корень|корн[яе][а-я]*|ruutjuur)\b/,
+  };
 
+  for (const key in patterns) {
+    if (patterns[key].test(input)) {
+      type = key;
+      break;
+    }
+  }
+
+  // Parameter extraction (remains the same)
   const matches = [...input.matchAll(/(amplitude|frequency|phase|a|b|c|d)\s*=?\s*(-?\d+(\.\d+)?)/g)];
   matches.forEach(match => {
     const key = match[1];
@@ -208,10 +219,12 @@ function parseUserInput(text) {
     params[key] = value;
   });
 
-  if (type === 'linear' && input.includes('negative slope')) params.a = -1;
+  // Special logic
+  if (type === 'linear' && input.includes('отрицательный наклон')) params.a = -1;
 
   return { type, params };
 }
+
 
 functionSelect.addEventListener('change', () => {
   const selected = functionSelect.value;
