@@ -191,6 +191,7 @@ function renderPlot(type, params) {
 
 function transliterateAndTranslate(text) {
   const map = {
+    // Русские термины
     'парабола': 'quadratic',
     'линейная': 'linear',
     'линейный': 'linear',
@@ -206,28 +207,42 @@ function transliterateAndTranslate(text) {
     'модуль': 'absolute',
     'корень': 'square-root',
     'руутюур': 'square-root',
+
+    // Эстонские термины
+    'parabool': 'quadratic',
+    'lineaarne': 'linear',
+    'sinus': 'sine',
+    'kosinus': 'cosine',
+    'tangens': 'tangent',
+    'eksponentsiaalne': 'exponential',
+    'logaritmiline': 'logarithmic',
+    'absoluutne': 'absolute',
     'ruutjuur': 'square-root',
-    'амплитуда': 'amplitude',
-    'частота': 'frequency',
-    'фаза': 'phase',
     'sagedus': 'frequency',
     'faas': 'phase',
-    'negatiivne kalle': 'negative slope',
-    'отрицательный наклон': 'negative slope',
     'kvadraatne': 'quadratic',
-    'lineaarne': 'linear',
-    'kuup': 'cubic'
+    'kuup': 'cubic',
+
+    // Английские для полноты, можно опустить при необходимости
+    'quadratic': 'quadratic',
+    'linear': 'linear',
+    'sine': 'sine',
+    'cosine': 'cosine',
+    'tangent': 'tangent',
+    'exponential': 'exponential',
+    'logarithmic': 'logarithmic',
+    'absolute': 'absolute',
+    'square-root': 'square-root'
   };
 
   let result = text.toLowerCase();
-
-  // Перебираем по ключу и заменяем каждый
+  // Перебираем по ключу и заменяем каждое вхождение
   for (const [src, target] of Object.entries(map)) {
     result = result.replaceAll(src, target);
   }
   return result;
 }
-  
+
 function parseUserInput(text) {
   // Convert Cyrillic to English keywords
   const input = transliterateAndTranslate(text).toLowerCase().trim();
